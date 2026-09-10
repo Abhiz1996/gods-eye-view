@@ -14,3 +14,4 @@ pinokio/ENVIRONMENT
 pinokio/.installed
 .vercel/
 Start Gods Eye View.command
+.hosted-api.mjs

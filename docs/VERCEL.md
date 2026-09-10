@@ -16,6 +16,9 @@ reliable continuous operation; do not enable AISStream on this serverless host.
 Before adding any paid provider credentials, add authentication and provider-side
 quotas as described in `SECURITY.md`. No private keys are included in this deployment.
 
-Validate hosting changes with `node --test scripts/hosted-api.test.mjs` and
-`npm run build`. After deployment, check `/api/health`, the browser's map rendering,
+The build bundles the server middleware separately and removes the Vite and
+Cesium build-tool imports, so native compiler packages are not runtime dependencies.
+
+Validate hosting changes with `npm run build` followed by
+`node --test scripts/hosted-api.test.mjs`. After deployment, check `/api/health`, the browser's map rendering,
 and at least one live data endpoint.
