@@ -1,0 +1,12 @@
+.git
+.env*
+!.env.example
+.gev-cache
+.gev-logs
+node_modules
+dist
+screenshots
+qa-shots
+output
+Start Gods Eye View.command
+pinokio/ENVIRONMENT
