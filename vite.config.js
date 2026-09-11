@@ -2603,7 +2603,10 @@ export async function fetchOverpassPayload(body, maxResponseBytes = OVERPASS_MAX
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'gods-eye-view-overpass-proxy/1.0',
+          // Several public Overpass mirrors return 406 for the previous
+          // product-style identifier. Use a normal browser-compatible agent
+          // so the mirror rotation below can return road geometry.
+          'User-Agent': 'Mozilla/5.0 (compatible; GodsEyeView/1.0)',
         },
         body,
         signal: controller.signal,
