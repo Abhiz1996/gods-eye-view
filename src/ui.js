@@ -13,6 +13,7 @@ import {
   decodeBloomIntensity,
 } from './bloom.js';
 import { LOCATIONS, CITY_POIS, GLOBE_VIEW, flyToGlobeView, flyToPresetLocation, flyToPOI, searchAndFlyTo } from './locations.js';
+import { requestDeviceLocation } from './deviceLocation.js';
 import { locationMiniStatus } from './locationStatus.js';
 import { interruptCameraMotion } from './cameraVerbs.js';
 import {
@@ -2367,6 +2368,7 @@ export class StyleManager {
     this._cctvSyncProgress = document.getElementById('cctv-sync-progress');
     this._toast = document.getElementById('toast');
     this._locationSearch = document.getElementById('location-search');
+    this._deviceLocationBtn = document.getElementById('device-location-btn');
     this._searchToggle = document.getElementById('search-toggle');
     this._locationPills = document.getElementById('location-pills');
     this._poiRow = document.getElementById('poi-row');
@@ -9293,6 +9295,35 @@ export class StyleManager {
       this._locationSearch.classList.toggle('expanded');
       if (this._locationSearch.classList.contains('expanded')) {
         this._locationSearch.focus();
+      }
+    });
+
+    // Browser location is requested only after an explicit click. The returned
+    // coordinates are used for this camera flight and are never sent to our API.
+    this._deviceLocationBtn?.addEventListener('click', async () => {
+      if (this._deviceLocationBtn.disabled) return;
+      this._deviceLocationBtn.disabled = true;
+      this._deviceLocationBtn.classList.add('locating');
+      this._deviceLocationBtn.title = 'Finding your location…';
+      try {
+        const { latitude, longitude } = await requestDeviceLocation();
+        this._searchedLocationLabel = 'My location';
+        this._setActiveLocation(null);
+        this._currentPoi = null;
+        this._collapsePOIRow();
+        this._updateLocationMiniStatus();
+        this.viewer.camera.cancelFlight();
+        this.viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 1800),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-55), roll: 0 },
+          duration: 2.2,
+        });
+      } catch (error) {
+        this._showToast(error?.message || 'Could not retrieve your location.');
+      } finally {
+        this._deviceLocationBtn.disabled = false;
+        this._deviceLocationBtn.classList.remove('locating');
+        this._deviceLocationBtn.title = 'Use this device\'s location';
       }
     });
 

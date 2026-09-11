@@ -1837,6 +1837,38 @@ body.ui-clean-view #scene-runtime.active {
   flex-shrink: 0;
 }
 
+.device-location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 5px;
+  color: var(--accent);
+  background: rgba(0, 212, 255, 0.07);
+  border: 1px solid rgba(0, 212, 255, 0.26);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+.device-location-btn:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.16);
+  border-color: var(--accent);
+}
+
+.device-location-btn.locating {
+  animation: device-location-pulse 900ms ease-in-out infinite;
+}
+
+.device-location-btn:disabled { cursor: wait; opacity: 0.7; }
+
+@keyframes device-location-pulse {
+  50% { transform: scale(1.12); box-shadow: 0 0 14px rgba(0, 212, 255, 0.55); }
+}
+
 .search-toggle-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--glass-border-hover);
@@ -7160,6 +7192,13 @@ body.scene-playback-mode :is(#clear-selected-layers, #reset-globe-view) {
   width: 30px;
   height: 30px;
   border-radius: 6px;
+}
+
+#command-dock .device-location-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  margin-right: 5px;
 }
 
 #command-dock #location-search,
