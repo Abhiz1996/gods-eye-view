@@ -608,6 +608,28 @@ function parseRoads(overpassData) {
   return roads;
 }
 
+/**
+ * Turn live TomTom segments into the small OSM-shaped payload the existing
+ * renderer understands. This is an outage fallback only: it keeps current
+ * traffic visible when a public Overpass mirror rejects or times out a road
+ * query.
+ */
+function roadsFromFlowSegments(segments) {
+  const elements = (Array.isArray(segments) ? segments : [])
+    .filter((segment) => Array.isArray(segment?.coords) && segment.coords.length >= 2)
+    .slice(0, 1200)
+    .map((segment, index) => ({
+      type: 'way',
+      id: -index - 1,
+      tags: { highway: 'primary' },
+      geometry: segment.coords.map(([lon, lat]) => ({ lon, lat })),
+      flow: { level: segment.trafficLevel, closure: segment.closure === true },
+    }));
+  const roads = parseRoads({ elements });
+  for (let index = 0; index < roads.length; index++) roads[index].flow = elements[index].flow;
+  return roads;
+}
+
 // ─── Road Length Estimation ────────────────────────────────
 
 /**
@@ -2130,6 +2152,24 @@ async function loadRoadsForBounds(bounds, altitude, trace = null) {
   } catch (e) {
     if (e?.name === 'AbortError') return;
     console.warn('[Data:Traffic] Fetch error:', e);
+    // TomTom flow already contains road polylines. Fall back to those directly
+    // when the optional OSM geometry source is unavailable.
+    try {
+      await ensureFlowStatus();
+      if (_liveMode && _enabled && generation === _loadGeneration) {
+        const segments = await fetchFlowForBounds(clamped, {});
+        const fallbackRoads = roadsFromFlowSegments(segments);
+        if (fallbackRoads.length) {
+          _roads = fallbackRoads;
+          _flowCoveragePct = 100;
+          _flowError = null;
+          renderRoadsForAltitude(fallbackRoads, altitude, 'TomTom flow fallback', trace);
+          renderedSomething = true;
+        }
+      }
+    } catch (flowError) {
+      _flowError = deriveTrafficFlowError(flowError);
+    }
   } finally {
     if (generation === _loadGeneration) {
       _fetching = false;
