@@ -3114,7 +3114,12 @@ function openSkyProxy() {
             }
           }
 
-          let upstream = await fetch('https://opensky-network.org/api/states/all?extended=1', { headers });
+          // Bound the primary feed, including body reads, so an unavailable
+          // OpenSky service cannot hold up the regional live fallback.
+          const flightSignal = AbortSignal.timeout(5000);
+          let upstream = await fetch('https://opensky-network.org/api/states/all?extended=1', {
+            headers, signal: flightSignal,
+          });
           // Auto-mode fallback: if OAuth was rejected, retry with Basic credentials
           if (
             (upstream.status === 401 || upstream.status === 403) &&
@@ -3126,7 +3131,9 @@ function openSkyProxy() {
               Accept: 'application/json',
               Authorization: `Basic ${Buffer.from(`${basicUser}:${basicPass}`).toString('base64')}`,
             };
-            upstream = await fetch('https://opensky-network.org/api/states/all?extended=1', { headers: retryHeaders });
+            upstream = await fetch('https://opensky-network.org/api/states/all?extended=1', {
+              headers: retryHeaders, signal: flightSignal,
+            });
             usedMode = 'basic';
             reason = 'oauth_rejected_fallback_basic';
           }
