@@ -2461,10 +2461,14 @@ const trafficLayer = {
    *   tilesFetched:number}}
    */
   getStats() {
-    // Outstanding flow work counts as loading: the paint race can leave a
-    // TomTom request in flight after the roads have settled, and the shared
-    // loading batch has to stay open long enough to announce its failure.
-    const loading = _fetching || _flowPending > 0;
+    // The detailed OSM-road pass may still be in flight (or time out) after
+    // the major-road pass has already been matched to current TomTom flow.
+    // Do not hide confirmed live coverage behind that optional refinement:
+    // users can see real traffic immediately, while the extra roads continue
+    // loading in the background. Until the first successful match, retain the
+    // loading state so we never claim live traffic prematurely.
+    const hasLiveCoverage = _liveMode && _flowCoveragePct > 0 && !_flowError;
+    const loading = !hasLiveCoverage && (_fetching || _flowPending > 0);
     const feed = trafficFeedPresentation({
       liveMode: _liveMode,
       fetching: loading,
